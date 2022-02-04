@@ -27,7 +27,7 @@ def run_evaluation(reference_path, fastq_path, dry, n_threads):
     if not os.path.exists(executable_path):
         exit("ERROR: executable path not found in build directory of project")
 
-    print(executable_path)
+    print("Found executable: " + executable_path)
 
     if n_threads is None:
         n_threads = os.cpu_count()
@@ -84,20 +84,21 @@ def main(reference_path, fastq_paths, dry, n_threads):
             paths.append(non_chimeric_lengths_path)
             paths.append(chimeric_lengths_path)
 
-    results = generate_chimer_stats(paths=paths)
+    results = generate_chimer_stats(paths=paths, dry=dry)
 
     dt = datetime.datetime.now()
     output_path = "results_" + dt.strftime("%m_%d_%Y_%H:%M:%S") + ".csv"
-    print(output_path)
+    print("Writing outputs to: " + output_path)
 
-    with open(output_path, 'w') as file:
-        for r,result in enumerate(results):
-            if r == 0:
-                file.write(result.get_header())
+    if not dry:
+        with open(output_path, 'w') as file:
+            for r,result in enumerate(results):
+                if r == 0:
+                    file.write(result.get_header())
+                    file.write('\n')
+
+                file.write(str(result))
                 file.write('\n')
-
-            file.write(str(result))
-            file.write('\n')
 
 
 if __name__ == "__main__":
@@ -130,7 +131,7 @@ if __name__ == "__main__":
         type=int,
         default=None,
         required=False,
-        help="echo the commands instead of executing them"
+        help="How many threads to use for minimap2 alignment"
     )
 
     args = parser.parse_args()

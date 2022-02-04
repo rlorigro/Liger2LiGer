@@ -27,7 +27,7 @@ class ChimerStats:
         return s
 
 
-def generate_chimer_stats(paths):
+def generate_chimer_stats(paths, dry=False):
 
     path_pairs = defaultdict(lambda: [None,None])
 
@@ -59,6 +59,9 @@ def generate_chimer_stats(paths):
 
         non_chimer_histogram = IterativeHistogram(start=0, stop=500_000, n_bins=2000)
         chimer_histogram = IterativeHistogram(start=0, stop=500_000, n_bins=2000)
+
+        if dry:
+            continue
 
         with open(pair[0], 'r') as file:
             for line in file:
