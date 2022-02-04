@@ -27,7 +27,7 @@ optional arguments:
                         How many threads to use for minimap2 alignment
 ```
 
-Using 64 threads, 6 promethION flowcells (about 1.5TB of sequence data) can be aligned and evaluated in 4.5hr, mainly attributable to recent improvements to minimap2.
+Using 64 threads, 7 promethION flowcells (about 1.5TB of sequence data) can be aligned and evaluated in 4.5hr, mainly attributable to recent improvements to minimap2.
 ![image](https://user-images.githubusercontent.com/28764332/152575429-b908ff7a-f333-4dde-8cc3-caa515c1ac49.png)
 (x scale = minutes)
 
