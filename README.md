@@ -3,6 +3,7 @@
 # Liger2LiGer
 Nanopore chimera splitting/detection tool. Automated end-to-end chimera detection and dataset evaluation starting from fastq.
 
+
 # Dependencies
 
 - build-essentials (CMake v3.10+, make) 
@@ -11,6 +12,18 @@ Nanopore chimera splitting/detection tool. Automated end-to-end chimera detectio
 
 Python3
 - matplotlib
+
+
+# Installation
+
+```
+git clone https://github.com/rlorigro/Liger2LiGer.git
+cd Liger2LiGer
+mkdir build
+cd build
+cmake ..
+make -j [n_threads]
+```
 
 # Usage
 
@@ -30,6 +43,7 @@ optional arguments:
 Using 64 threads, 7 promethION flowcells (about 1.5TB of sequence data) can be aligned and evaluated in 4.5hr, mainly attributable to recent improvements to minimap2.
 ![image](https://user-images.githubusercontent.com/28764332/152575429-b908ff7a-f333-4dde-8cc3-caa515c1ac49.png)
 (x scale = minutes)
+
 
 # Output
 
