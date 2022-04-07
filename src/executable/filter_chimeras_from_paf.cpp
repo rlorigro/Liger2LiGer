@@ -181,6 +181,7 @@ int main(int argc, char* argv[]){
             "File path of PAF file containing alignments to some reference")
             ->required();
 
+    CLI11_PARSE(app, argc, argv);
 
     filter_paf(paf_path);
 
