@@ -1,6 +1,7 @@
 from collections import defaultdict
 from modules.IterativeHistogram import IterativeHistogram
 from matplotlib import pyplot
+import matplotlib.ticker as plticker
 import matplotlib
 import argparse
 import numpy
@@ -113,7 +114,7 @@ def generate_chimer_stats(paths, dry=False):
         axes.bar(x=x, height=non_chimer_frequencies, bottom=chimer_frequencies, width=x[1]-x[0], color="C0")
 
         axes.set_title(name + " raw")
-        axes.set_xlim([0,200_000])
+        axes.set_xlim([0,300_000])
         axes.set_ylim([0,numpy.mean(sorted(non_chimer_frequencies, reverse=True)[:3])])
 
         output_path = os.path.join(os.path.dirname(pair[0]),name + "_chimer_distribution_raw.png")
@@ -137,7 +138,7 @@ def generate_chimer_stats(paths, dry=False):
         axes.bar(x=x, height=y, width=x[1]-x[0], color="C1")
 
         axes.set_title(name + " percentages")
-        axes.set_xlim([0,200_000])
+        axes.set_xlim([0,300_000])
         axes.set_ylim([0,100])
 
         output_path = os.path.join(os.path.dirname(pair[0]),name + "_chimer_distribution_percent.png")
@@ -147,6 +148,9 @@ def generate_chimer_stats(paths, dry=False):
         f.set_size_inches([10,8])
         axes.set_xlabel("Read Length (bp)")
         axes.set_ylabel("Frequency (%)")
+
+        loc = plticker.MultipleLocator(base=5)
+        axes.yaxis.set_major_locator(loc)
 
         pyplot.savefig(output_path, dpi=200)
         pyplot.close()
@@ -167,7 +171,7 @@ def generate_chimer_stats(paths, dry=False):
         axes.bar(x=x, height=non_chimer_frequencies, bottom=chimer_frequencies, width=x[1]-x[0], color="C0")
 
         axes.set_title(name + " coverage")
-        axes.set_xlim([0,400_000])
+        axes.set_xlim([0,300_000])
 
         output_path = os.path.join(os.path.dirname(pair[0]),name + "_chimer_distribution_coverage.png")
 
