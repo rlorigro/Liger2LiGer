@@ -36,6 +36,7 @@ def generate_chimer_stats(paths, dry=False):
     for path in paths:
         name = '_'.join(os.path.basename(path).split('.')[:-2])
 
+        print(path)
         print(name, "non_chimer_lengths" in path, "chimer_lengths" in path)
 
         if "non_chimer_lengths" in path:
@@ -166,7 +167,7 @@ def generate_chimer_stats(paths, dry=False):
         axes.bar(x=x, height=non_chimer_frequencies, bottom=chimer_frequencies, width=x[1]-x[0], color="C0")
 
         axes.set_title(name + " coverage")
-        axes.set_xlim([0,200_000])
+        axes.set_xlim([0,400_000])
 
         output_path = os.path.join(os.path.dirname(pair[0]),name + "_chimer_distribution_coverage.png")
 
@@ -196,4 +197,6 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    generate_chimer_stats(paths=args.input)
+    paths = args.input.split(',')
+
+    generate_chimer_stats(paths=paths)
