@@ -37,7 +37,7 @@ public:
 
     /// Methods ///
     ChainElement(
-        string& ref_name,
+        const string& ref_name,
         uint32_t ref_start,
         uint32_t ref_stop,
         uint32_t query_start,
@@ -60,7 +60,7 @@ public:
 ostream& operator<<(ostream& o, const ChainElement& e);
 
 
-class PafAlignmentChain {
+class AlignmentChain {
 public:
     vector <ChainElement> chain;
 
@@ -71,7 +71,7 @@ public:
     static const uint32_t gap_penalty = 5000;
 
     /// Methods ///
-    PafAlignmentChain()=default;
+    AlignmentChain()=default;
     void add(ChainElement& e);
     void sort_chain();
     void split(set <pair <size_t, size_t> >& subchain_bounds, pair <size_t, size_t> bounds = {0,0});
@@ -81,14 +81,14 @@ public:
 
 
 void print_subchains(
-        const PafAlignmentChain& chain,
+        const AlignmentChain& chain,
         const set <pair <size_t, size_t> >& subchain_bounds,
         const string& read_name);
 
 
 class AlignmentChains {
 public:
-    map <string, PafAlignmentChain> chains;
+    map <string, AlignmentChain> chains;
 
     // Ignore alignments with mapQ score less than this
     static const uint32_t min_quality = 5;
@@ -100,6 +100,7 @@ public:
     AlignmentChains()=default;
     void add_alignment(string line);
     void load_from_paf(path paf_path);
+    void load_from_bam(path bam_path);
     void split_all_chains();
 };
 

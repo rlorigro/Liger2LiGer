@@ -9,6 +9,9 @@ Nanopore chimera splitting/detection tool. Automated end-to-end chimera detectio
 - build-essentials (CMake v3.10+, make) 
 - minimap2 v2.23+ (via PATH or alias)
 - samtools v1.9+ (via PATH or alias)
+- ZLIB 
+- BZ2LIB
+- CURLLIB
 
 Python3
 - matplotlib

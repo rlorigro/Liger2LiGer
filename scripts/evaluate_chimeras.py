@@ -22,7 +22,7 @@ def run_evaluation(reference_path, fastq_path, dry, n_threads):
 
     project_path = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
     build_dir = os.path.join(project_path, "build")
-    executable_path = os.path.join(build_dir, "filter_chimeras_from_paf")
+    executable_path = os.path.join(build_dir, "filter_chimeras_from_alignment")
 
     if not os.path.exists(executable_path):
         exit("ERROR: executable path not found in build directory of project")

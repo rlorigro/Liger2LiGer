@@ -1,4 +1,5 @@
-#include "PafAlignmentChain.hpp"
+#include "AlignmentChain.hpp"
+#include "Bam.hpp"
 
 #include <algorithm>
 #include <iostream>
@@ -23,7 +24,7 @@ using std::max;
 namespace liger2liger {
 
 ChainElement::ChainElement(
-        string& ref_name,
+        const string& ref_name,
         uint32_t ref_start,
         uint32_t ref_stop,
         uint32_t query_start,
@@ -99,8 +100,123 @@ void AlignmentChains::load_from_paf(path paf_path) {
     }
 }
 
+
+void AlignmentChains::load_from_bam(path bam_path) {
+    Bam reader(bam_path);
+
+    string line;
+
+    reader.for_alignment_in_bam(true, [&](const SamElement& alignment){
+        uint32_t start_clip = 0;
+        uint32_t end_clip = 0;
+        uint32_t query_start;
+        uint32_t query_stop;
+        uint32_t query_length;
+        uint32_t ref_start;
+        uint32_t ref_stop;
+        uint32_t ref_length;
+        uint32_t alignment_length;
+        uint32_t n_matches = 0;
+        uint32_t n_inserts = 0;
+        uint32_t n_deletes = 0;
+        uint32_t n_n = 0;
+
+        size_t i = 0;
+        /// 		while ((m = re.exec(t[5])) != null) {
+        ///			var l = parseInt(m[1]), op = m[2];
+        ///			if (op == 'M') M += l, have_M = true;
+        ///			else if (op == 'I') ++I[0], I[1] += l;
+        ///			else if (op == 'D') ++D[0], D[1] += l;
+        ///			else if (op == 'N') N += l;
+        ///			else if (op == 'S') clip[n_cigar == 0? 0 : 1] = l, soft_clip += l;
+        ///			else if (op == 'H') clip[n_cigar == 0? 0 : 1] = l;
+        ///			else if (op == '=') M += l, have_ext = true, op = 'M';
+        ///			else if (op == 'X') M += l, mm += l, have_ext = true, op = 'M';
+        ///			++n_cigar;
+        ///			if (MD != null && op != 'H') {
+        ///				if (cigar.length > 0 && cigar[cigar.length-1][1] == op)
+        ///					cigar[cigar.length-1][0] += l;
+        ///				else cigar.push([l, op]);
+        ///			}
+        ///		}
+        ///		var ql = M + I[1] + soft_clip;
+        ///		var tl = M + D[1] + N;
+
+        alignment.for_each_cigar([&](char type, uint32_t length){
+            if (type == 'M' or type == 'X' or type == '='){
+                n_matches += length;
+            }
+            else if (type == 'I'){
+                n_inserts += length;
+            }
+            else if (type == 'D'){
+                n_deletes += length;
+            }
+            else if (type == 'N'){
+                n_n += length;
+            }
+            else if (type == 'S' or type == 'H'){
+                if (i == 0){
+                    start_clip = length;
+                }
+                else{
+                    end_clip = length;
+                }
+            }
+
+            i++;
+        });
+
+        query_length = n_matches + n_inserts + start_clip + end_clip;
+        alignment_length = n_matches + n_inserts + n_deletes;
+        ref_start = alignment.ref_start;
+        ref_stop = ref_start + n_matches + n_deletes;
+        ref_length = alignment.ref_length;
+
+        if (alignment.is_reverse()){
+            query_start = end_clip;
+            query_stop = query_length - start_clip;
+        }
+        else{
+            query_start = start_clip;
+            query_stop = query_length - end_clip;
+        }
+
+        cerr << "start_clip: " << start_clip << '\n';
+        cerr << "end_clip: " << end_clip << '\n';
+        cerr << "query_start: " << query_start << '\n';
+        cerr << "query_stop: " << query_stop << '\n';
+        cerr << "query_length: " << query_length << '\n';
+        cerr << "ref_start: " << ref_start << '\n';
+        cerr << "ref_stop: " << ref_stop << '\n';
+        cerr << "ref_length: " << ref_length << '\n';
+        cerr << "alignment_length: " << alignment_length << '\n';
+        cerr << "n_matches: " << n_matches << '\n';
+        cerr << "n_inserts: " << n_inserts << '\n';
+        cerr << "n_deletes: " << n_deletes << '\n';
+        cerr << "n_n: " << n_n << '\n';
+        ChainElement e(
+                alignment.ref_name,
+                ref_start,
+                ref_stop,
+                query_start,
+                query_stop,
+                ref_length,
+                query_length,
+                n_matches,
+                alignment_length,
+                uint32_t(alignment.mapq),
+                alignment.is_reverse());
+
+        cerr << e << '\n';
+
+        chains[alignment.query_name].add(e);
+
+    });
+}
+
 void print_subchains(
-        const PafAlignmentChain& chain,
+        const AlignmentChain& chain,
         const set<pair<size_t, size_t> >& subchain_bounds,
         const string& read_name) {
 
@@ -116,7 +232,7 @@ void print_subchains(
 }
 
 
-void PafAlignmentChain::add(ChainElement& e) {
+void AlignmentChain::add(ChainElement& e) {
     chain.emplace_back(e);
 }
 
@@ -225,17 +341,17 @@ bool compare_chain_elements(ChainElement& a, ChainElement& b) {
 }
 
 
-size_t PafAlignmentChain::size() const {
+size_t AlignmentChain::size() const {
     return chain.size();
 }
 
 
-void PafAlignmentChain::sort_chain() {
+void AlignmentChain::sort_chain() {
     sort(chain.begin(), chain.end(), compare_chain_elements);
 }
 
 
-uint32_t PafAlignmentChain::compute_distance(ChainElement& a, ChainElement& b) {
+uint32_t AlignmentChain::compute_distance(ChainElement& a, ChainElement& b) {
     uint32_t distance = 0;
     if (a.ref_name == b.ref_name) {
         auto a_start = a.get_forward_start();
@@ -260,7 +376,7 @@ uint32_t PafAlignmentChain::compute_distance(ChainElement& a, ChainElement& b) {
 }
 
 
-void PafAlignmentChain::split(set<pair<size_t, size_t> >& subchain_bounds, pair<size_t, size_t> bounds) {
+void AlignmentChain::split(set<pair<size_t, size_t> >& subchain_bounds, pair<size_t, size_t> bounds) {
     // For the first recursion, load the result object
     if (subchain_bounds.empty()) {
         bounds = {0, chain.size()};

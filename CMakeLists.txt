@@ -52,8 +52,10 @@ include_directories(
 
 # Define our shared library sources. NOT test/executables.
 set(SOURCES
-        src/PafAlignmentChain.cpp
+        src/AlignmentChain.cpp
         src/PafElement.cpp
+        src/Bam.cpp
+        src/Sam.cpp
         )
 
 project(liger2liger)
@@ -65,6 +67,131 @@ set_target_properties(liger2liger PROPERTIES PREFIX "")
 
 # Eliminate an extraneous -D during compilation.
 set_target_properties(liger2liger PROPERTIES DEFINE_SYMBOL "")
+
+##############################################
+# ------------------------------------------ #
+# -------- LINKING EXTERNAL LIBRARY -------- #
+# ----------------- htslib ----------------- #
+# ------------------------------------------ #
+##############################################
+
+# Need to explicitly enable ExternalProject functionality
+include(ExternalProject)
+
+# --------------------
+
+message(STATUS "Fetching htslib")
+
+# https://github.com/samtools/htslib/releases/download/1.15.1/htslib-1.15.1.tar.bz2
+
+find_package(ZLIB REQUIRED)
+
+# Dependencies
+find_library(ZLIB NAMES z)
+if(${ZLIB} STREQUAL "ZLIB-NOTFOUND")
+    message(WARNING "Couldn't find the 'z' library")
+endif()
+
+find_library(BZ2LIB bz2)
+if(${BZ2LIB} STREQUAL "BZ2LIB-NOTFOUND")
+    message(WARNING "Couldn't find the 'bz2' library")
+endif()
+
+find_library(CURLLIB curl)
+if(${CURLLIB} STREQUAL "CURLLIB-NOTFOUND")
+    message(WARNING "Couldn't find the 'curl' library")
+endif()
+
+include(FetchContent)
+
+FetchContent_Declare(
+        project_htslib
+        URL      https://github.com/samtools/htslib/releases/download/1.9/htslib-1.9.tar.bz2
+)
+
+FetchContent_MakeAvailable(project_htslib)
+
+set(HTSLIB_SOURCES
+        ${project_htslib_SOURCE_DIR}/cram/cram_codecs.c
+        ${project_htslib_SOURCE_DIR}/cram/cram_decode.c
+        ${project_htslib_SOURCE_DIR}/cram/cram_encode.c
+        ${project_htslib_SOURCE_DIR}/cram/cram_external.c
+        ${project_htslib_SOURCE_DIR}/cram/cram_index.c
+        ${project_htslib_SOURCE_DIR}/cram/cram_io.c
+        ${project_htslib_SOURCE_DIR}/cram/cram_samtools.c
+        ${project_htslib_SOURCE_DIR}/cram/cram_stats.c
+        ${project_htslib_SOURCE_DIR}/cram/files.c
+        ${project_htslib_SOURCE_DIR}/cram/mFILE.c
+        ${project_htslib_SOURCE_DIR}/cram/open_trace_file.c
+        ${project_htslib_SOURCE_DIR}/cram/pooled_alloc.c
+        ${project_htslib_SOURCE_DIR}/cram/rANS_static.c
+        ${project_htslib_SOURCE_DIR}/cram/sam_header.c
+        ${project_htslib_SOURCE_DIR}/cram/string_alloc.c
+        ${project_htslib_SOURCE_DIR}/os/rand.c
+        ${project_htslib_SOURCE_DIR}/bcf_sr_sort.c
+        ${project_htslib_SOURCE_DIR}/bgzf.c
+        ${project_htslib_SOURCE_DIR}/bgzip.c
+        ${project_htslib_SOURCE_DIR}/errmod.c
+        ${project_htslib_SOURCE_DIR}/faidx.c
+        ${project_htslib_SOURCE_DIR}/hfile.c
+        ${project_htslib_SOURCE_DIR}/hfile_gcs.c
+        ${project_htslib_SOURCE_DIR}/hfile_libcurl.c
+        ${project_htslib_SOURCE_DIR}/hfile_net.c
+        ${project_htslib_SOURCE_DIR}/hts.c
+        ${project_htslib_SOURCE_DIR}/htsfile.c
+        ${project_htslib_SOURCE_DIR}/kfunc.c
+        ${project_htslib_SOURCE_DIR}/knetfile.c
+        ${project_htslib_SOURCE_DIR}/kstring.c
+        ${project_htslib_SOURCE_DIR}/md5.c
+        ${project_htslib_SOURCE_DIR}/multipart.c
+        ${project_htslib_SOURCE_DIR}/probaln.c
+        ${project_htslib_SOURCE_DIR}/realn.c
+        ${project_htslib_SOURCE_DIR}/regidx.c
+        ${project_htslib_SOURCE_DIR}/sam.c
+        ${project_htslib_SOURCE_DIR}/synced_bcf_reader.c
+        ${project_htslib_SOURCE_DIR}/tabix.c
+        ${project_htslib_SOURCE_DIR}/tbx.c
+        ${project_htslib_SOURCE_DIR}/textutils.c
+        ${project_htslib_SOURCE_DIR}/thread_pool.c
+        ${project_htslib_SOURCE_DIR}/vcf.c
+        ${project_htslib_SOURCE_DIR}/vcf_sweep.c
+        ${project_htslib_SOURCE_DIR}/vcfutils.c
+        )
+
+message(STATUS "htslib_SOURCE_DIR: ${project_htslib_SOURCE_DIR}")
+
+
+set(HTS_DIR _deps/project_htslib-src)
+
+# HTSLIB configure
+add_custom_target(
+        BUILD_HTS
+        ALL
+        #        OUTPUT ${PROJECT_SOURCE_DIR}/external/htslib/config.h # //TODO: at build time ${htslib_SOURCE_DIR} is not actually populated!! is an empty string
+        WORKING_DIRECTORY ${HTS_DIR}
+        COMMAND pwd
+        COMMAND autoconf
+        COMMAND autoheader
+        COMMAND ./configure --disable-lzma --disable-libcurl --disable-bz2 --disable-s3 --disable-gcs --without-libdeflate --disable-plugins
+        COMMAND $(MAKE) prefix=${CMAKE_SOURCE_DIR}/external/htslib/ install
+)
+
+
+# Ensure that main library has access to primary dependencies' and secondary dependencies' headers
+include_directories(
+        ${CMAKE_BINARY_DIR}/_deps/project_htslib-src
+        ${CMAKE_SOURCE_DIR}/external/
+)
+
+#add_custom_target(HTSLIB_CONFIGURED DEPENDS "${CMAKE_BINARY_DIR}/_deps/project_htslib-src/config.h")
+
+add_library(htslib ${HTSLIB_SOURCES})
+add_dependencies(htslib BUILD_HTS)
+add_dependencies(liger2liger htslib)
+
+target_link_libraries(htslib pthread bz2 z curl)
+
+message(STATUS "INSTALL_DIR: ${INSTALL_DIR}")
 
 
 ############################################
@@ -87,6 +214,7 @@ foreach(FILENAME_PREFIX ${TESTS})
     target_link_libraries(${FILENAME_PREFIX}
             liger2liger
             Threads::Threads
+            htslib
             )
 
 endforeach()
@@ -103,6 +231,7 @@ foreach(FILENAME_PREFIX ${EXECUTABLES})
     target_link_libraries(${FILENAME_PREFIX}
             liger2liger
             Threads::Threads
+            htslib
             )
 
 endforeach()

@@ -1,4 +1,4 @@
-#include "PafAlignmentChain.hpp"
+#include "AlignmentChain.hpp"
 #include "Filesystem.hpp"
 #include "CLI11.hpp"
 
@@ -25,11 +25,11 @@ using std::cout;
 using std::abs;
 
 using liger2liger::AlignmentChains;
-using liger2liger::PafAlignmentChain;
+using liger2liger::AlignmentChain;
 using liger2liger::ChainElement;
 
 
-bool chain_is_palindromic(const PafAlignmentChain& chain, const pair <size_t, size_t>& bounds){
+bool chain_is_palindromic(const AlignmentChain& chain, const pair <size_t, size_t>& bounds){
     bool is_palindromic = false;
 
     uint32_t prev_midpoint = 0;
@@ -97,15 +97,24 @@ bool chain_is_palindromic(const PafAlignmentChain& chain, const pair <size_t, si
 }
 
 
-void filter_paf(path paf_path){
+void filter_paf(path alignment_path){
     AlignmentChains alignment_chains;
-    alignment_chains.load_from_paf(paf_path);
 
-    path chimer_id_path = paf_path;
+    if (alignment_path.extension() == ".paf") {
+        alignment_chains.load_from_paf(alignment_path);
+    }
+    else if (alignment_path.extension() == ".bam") {
+        alignment_chains.load_from_bam(alignment_path);
+    }
+    else {
+        throw runtime_error("ERROR: cannot use '" + alignment_path.string() + "' file with '" + alignment_path.extension().string() + "' extension");
+    }
+
+    path chimer_id_path = alignment_path;
     chimer_id_path.replace_extension("chimeric_reads.txt");
     ofstream chimer_id_file(chimer_id_path);
 
-    path non_chimer_id_path = paf_path;
+    path non_chimer_id_path = alignment_path;
     non_chimer_id_path.replace_extension("non_chimeric_reads.txt");
     ofstream non_chimer_id_file(non_chimer_id_path);
 
@@ -115,10 +124,10 @@ void filter_paf(path paf_path){
     vector<size_t> non_chimer_lengths;
     vector<size_t> chimer_lengths;
 
-    path non_chimer_lengths_path = paf_path;
-    path chimer_lengths_path = paf_path;
-    path chimer_subchains_lengths_path = paf_path;
-    path chimer_subchains_path = paf_path;
+    path non_chimer_lengths_path = alignment_path;
+    path chimer_lengths_path = alignment_path;
+    path chimer_subchains_lengths_path = alignment_path;
+    path chimer_subchains_path = alignment_path;
 
     non_chimer_lengths_path.replace_extension("non_chimer_lengths.txt");
     chimer_lengths_path.replace_extension("chimer_lengths.txt");
