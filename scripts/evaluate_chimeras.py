@@ -53,7 +53,7 @@ def run_evaluation(reference_path, fastq_path, dry, n_threads):
 
     chimera_exe_args = [
         executable_path,
-        "--paf_path", minimap_output_path
+        "--alignment_path", minimap_output_path
     ]
 
     if not dry:

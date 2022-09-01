@@ -3,6 +3,7 @@ from modules.IterativeHistogram import IterativeHistogram
 from matplotlib import pyplot
 import matplotlib.ticker as plticker
 import matplotlib
+import datetime
 import argparse
 import numpy
 import os
@@ -28,7 +29,12 @@ class ChimerStats:
         return s
 
 
-def generate_chimer_stats(paths, dry=False):
+def generate_chimer_stats(paths, output_directory=None, dry=False):
+    if not dry and output_directory is not None:
+        if os.path.exists(output_directory):
+            exit("ERROR: output directory exists already: " + output_directory)
+
+        os.makedirs(output_directory)
 
     path_pairs = defaultdict(lambda: [None,None])
 
@@ -100,6 +106,9 @@ def generate_chimer_stats(paths, dry=False):
 
         results.append(r)
 
+        if output_directory is None:
+            output_directory = os.path.dirname(pair[0])
+
         # -------
 
         f = pyplot.figure()
@@ -117,7 +126,7 @@ def generate_chimer_stats(paths, dry=False):
         axes.set_xlim([0,300_000])
         axes.set_ylim([0,numpy.mean(sorted(non_chimer_frequencies, reverse=True)[:3])])
 
-        output_path = os.path.join(os.path.dirname(pair[0]),name + "_chimer_distribution_raw.png")
+        output_path = os.path.join(output_directory, name + "_chimer_distribution_raw.png")
 
         pyplot.legend(["chimers","non_chimers"])
 
@@ -141,7 +150,7 @@ def generate_chimer_stats(paths, dry=False):
         axes.set_xlim([0,300_000])
         axes.set_ylim([0,100])
 
-        output_path = os.path.join(os.path.dirname(pair[0]),name + "_chimer_distribution_percent.png")
+        output_path = os.path.join(output_directory, name + "_chimer_distribution_percent.png")
 
         pyplot.legend(["chimers","non_chimers"])
 
@@ -173,7 +182,7 @@ def generate_chimer_stats(paths, dry=False):
         axes.set_title(name + " coverage")
         axes.set_xlim([0,300_000])
 
-        output_path = os.path.join(os.path.dirname(pair[0]),name + "_chimer_distribution_coverage.png")
+        output_path = os.path.join(output_directory, name + "_chimer_distribution_coverage.png")
 
         pyplot.legend(["chimers","non_chimers"])
 
@@ -183,6 +192,21 @@ def generate_chimer_stats(paths, dry=False):
 
         pyplot.savefig(output_path, dpi=200)
         pyplot.close()
+
+    if output_directory is not None:
+        dt = datetime.datetime.now()
+        output_path = os.path.join(output_directory, "results_" + dt.strftime("%m_%d_%Y_%H:%M:%S") + ".csv")
+        print("Writing outputs to: " + output_path)
+
+        if not dry:
+            with open(output_path, 'w') as file:
+                for r,result in enumerate(results):
+                    if r == 0:
+                        file.write(result.get_header())
+                        file.write('\n')
+
+                    file.write(str(result))
+                    file.write('\n')
 
     return results
 
@@ -199,8 +223,23 @@ if __name__ == "__main__":
               non_chimer_lengths.txt or chimer_lengths.txt and pairs share a prefix."
         )
 
+    parser.add_argument(
+        "--output_dir","-o",
+        type=str,
+        required=False,
+        default=None,
+        help="Optionally create a directory to store the output."
+        )
+
+    parser.add_argument(
+        "--dry","-d",
+        action="store_true",
+        required=False,
+        help="Don't create any files, report output paths only."
+        )
+
     args = parser.parse_args()
 
     paths = args.input.split(',')
 
-    generate_chimer_stats(paths=paths)
+    generate_chimer_stats(paths=paths, dry=args.dry, output_directory=args.output_dir)
