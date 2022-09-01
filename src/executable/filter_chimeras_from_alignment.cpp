@@ -139,6 +139,9 @@ void filter_paf(path alignment_path){
     ofstream chimer_subchains_lengths_file(chimer_subchains_lengths_path);
     ofstream chimer_subchains_file(chimer_subchains_path);
 
+    cerr << "Writing chimeric lengths to file: " << chimer_lengths_path << '\n';
+    cerr << "Writing non-chimeric lengths to file: " << non_chimer_lengths_path << '\n';
+
     for (auto& [name, chain]: alignment_chains.chains) {
         // Sort by order of occurrence in query (read) sequence
         chain.sort_chain();
@@ -185,9 +188,9 @@ int main(int argc, char* argv[]){
     CLI::App app{"App description"};
 
     app.add_option(
-            "-i,--paf_path",
+            "-i,--alignment_path",
             paf_path,
-            "File path of PAF file containing alignments to some reference")
+            "File path of PAF or BAM file containing alignments to some reference")
             ->required();
 
     CLI11_PARSE(app, argc, argv);

@@ -223,7 +223,7 @@ endforeach()
 # -------- EXECUTABLES --------
 
 set(EXECUTABLES
-        filter_chimeras_from_paf
+        filter_chimeras_from_alignment
         )
 
 foreach(FILENAME_PREFIX ${EXECUTABLES})

@@ -182,19 +182,6 @@ void AlignmentChains::load_from_bam(path bam_path) {
             query_stop = query_length - end_clip;
         }
 
-        cerr << "start_clip: " << start_clip << '\n';
-        cerr << "end_clip: " << end_clip << '\n';
-        cerr << "query_start: " << query_start << '\n';
-        cerr << "query_stop: " << query_stop << '\n';
-        cerr << "query_length: " << query_length << '\n';
-        cerr << "ref_start: " << ref_start << '\n';
-        cerr << "ref_stop: " << ref_stop << '\n';
-        cerr << "ref_length: " << ref_length << '\n';
-        cerr << "alignment_length: " << alignment_length << '\n';
-        cerr << "n_matches: " << n_matches << '\n';
-        cerr << "n_inserts: " << n_inserts << '\n';
-        cerr << "n_deletes: " << n_deletes << '\n';
-        cerr << "n_n: " << n_n << '\n';
         ChainElement e(
                 alignment.ref_name,
                 ref_start,
@@ -207,8 +194,6 @@ void AlignmentChains::load_from_bam(path bam_path) {
                 alignment_length,
                 uint32_t(alignment.mapq),
                 alignment.is_reverse());
-
-        cerr << e << '\n';
 
         chains[alignment.query_name].add(e);
 
